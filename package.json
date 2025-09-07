@@ -1,0 +1,25 @@
+{
+  "name": "portfolio-fullstack",
+  "version": "1.0.0",
+  "description": "Portfolio fullstack application with React frontend and NestJS backend",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd portfolio-base && npm run dev",
+    "dev:backend": "cd portfolio-be-base && npm run start:dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd portfolio-base && npm run build",
+    "build:backend": "cd portfolio-be-base && npm run build",
+    "install:all": "npm install && cd portfolio-base && npm install && cd ../portfolio-be-base && npm install",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "cd portfolio-base && npm run preview",
+    "start:backend": "cd portfolio-be-base && npm run start:prod"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "portfolio-base",
+    "portfolio-be-base"
+  ]
+}
