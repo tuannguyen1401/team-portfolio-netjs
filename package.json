@@ -12,7 +12,7 @@
     "build:backend": "cd portfolio-be-base && npm run build",
     "install:all": "npm install && cd portfolio-base && npm install && cd ../portfolio-be-base && npm install",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
-    "start:frontend": "cd portfolio-base && npm run preview",
+    "start:frontend": "cd portfolio-base && npm run build && npm run preview",
     "start:backend": "cd portfolio-be-base && npm run start:prod"
   },
   "devDependencies": {
