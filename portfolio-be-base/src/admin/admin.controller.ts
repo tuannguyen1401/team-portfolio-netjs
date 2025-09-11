@@ -1,31 +1,14 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Render, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Render, Res, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Response } from 'express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { imageMulterOptions, buildPublicUploadPath } from '../upload/upload.config';
 
 @Controller('admin')
 export class AdminController {
   constructor(private readonly prisma: PrismaService) {}
 
-  private multerConfig = {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Only image files are allowed!'), false);
-      }
-    },
-  };
+  private multerConfig = imageMulterOptions;
 
   // Dashboard
   @Get()
@@ -74,25 +57,9 @@ export class AdminController {
   }
 
   @Post('projects')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Only image files are allowed!'), false);
-      }
-    },
-  }))
+  @UseInterceptors(FileInterceptor('image', imageMulterOptions))
   async createProject(@Body() data: any, @UploadedFile() file: Express.Multer.File, @Res() res: Response) {
-    const imageUrl = file ? `/uploads/${file.filename}` : null;
+    const imageUrl = file ? buildPublicUploadPath(file.filename) : null;
     
     await this.prisma.project.create({
       data: {
@@ -101,40 +68,26 @@ export class AdminController {
         short_description: data.short_description,
         image_url: imageUrl,
         is_feautured: data.is_feautured === 'on',
+        stack_name: data.stack_name,
       },
     });
     res.redirect('/admin/projects');
   }
 
   @Post('projects/:id/update')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        callback(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Only image files are allowed!'), false);
-      }
-    },
-  }))
+  @UseInterceptors(FileInterceptor('image', imageMulterOptions))
   async updateProject(@Param('id') id: string, @Body() data: any, @UploadedFile() file: Express.Multer.File, @Res() res: Response) {
     const updateData: any = {
       title: data.title,
       description: data.description,
       short_description: data.short_description,
       is_feautured: data.is_feautured === 'on',
+      stack_name: data.stack_name,
     };
 
     // Chỉ cập nhật image_url nếu có file mới được upload
     if (file) {
-      updateData.image_url = `/uploads/${file.filename}`;
+      updateData.image_url = buildPublicUploadPath(file.filename);
     }
 
     await this.prisma.project.update({
@@ -178,6 +131,7 @@ export class AdminController {
     const config = await this.prisma.config.findUnique({
       where: { id: parseInt(id) },
     });
+
     return {
       title: 'Edit Config',
       config: config,
@@ -185,23 +139,50 @@ export class AdminController {
   }
 
   @Post('configs')
-  async createConfig(@Body() data: any, @Res() res: Response) {
+  @UseInterceptors(FileInterceptor('value', imageMulterOptions))
+  async createConfig(@Req() req: any, @Body() data: any, @UploadedFile() file: Express.Multer.File, @Res() res: Response) {
+
+    // Validate duplicate config_name
+    const existingConfig = await this.prisma.config.findUnique({
+      where: { config_name: req.body.config_name }
+    });
+    if (existingConfig) {
+      return res.render('admin/config-form', {
+        title: 'New Config',
+        config: req.body,
+        error: 'Config name already exists.'
+      });
+    }
+
+    // Sử dụng req.body thay vì data parameter
+    const safeData: any = req.body || {};
+    if (safeData.value_type === 'image' && file) {
+      safeData.value = buildPublicUploadPath(file.filename);
+    }
+
     await this.prisma.config.create({
       data: {
-        config_name: data.config_name,
-        value: data.value,
+        config_name: safeData.config_name || '',
+        value: safeData.value || '',
+        value_type: safeData.value_type || 'text'
       },
     });
     res.redirect('/admin/configs');
   }
 
   @Post('configs/:id/update')
-  async updateConfig(@Param('id') id: string, @Body() data: any, @Res() res: Response) {
+  @UseInterceptors(FileInterceptor('value', imageMulterOptions))
+  async updateConfig(@Param('id') id: string, @Body() data: any, @UploadedFile() file: Express.Multer.File, @Res() res: Response) {
+    const safeData: any = data || {};
+    if (file) {
+      safeData.value = buildPublicUploadPath(file.filename);
+    }
+
     await this.prisma.config.update({
       where: { id: parseInt(id) },
       data: {
-        config_name: data.config_name,
-        value: data.value,
+        config_name: safeData.config_name || '',
+        value: safeData.value,
       },
     });
     res.redirect('/admin/configs');

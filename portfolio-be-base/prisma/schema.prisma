@@ -26,6 +26,7 @@ model Project {
 
 model Config {
   id          Int    @id @default(autoincrement())
-  config_name String @unique
-  value       String
+  config_name String @unique @db.VarChar(255) @default("")
+  value       String @db.VarChar(255) @default("")
+  value_type  String @db.VarChar(255) @default("")
 }

@@ -32,6 +32,7 @@
                             <th>ID</th>
                             <th>Config Name</th>
                             <th>Value</th>
+                            <th>Value Type</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -40,7 +41,14 @@
                         <tr>
                             <td><%= config.id %></td>
                             <td><%= config.config_name %></td>
-                            <td><%= config.value %></td>
+                            <td>
+                                <% if (config.value_type === 'image') { %>
+                                    <img src="<%= config.value %>" alt="Config Image" style="max-width: 120px; max-height: 80px;">
+                                <% } else { %>
+                                    <%= config.value %>
+                                <% } %>
+                            </td>
+                            <td><%= config.value_type %></td>
                             <td>
                                 <a href="/admin/configs/<%= config.id %>/edit" class="btn btn-sm btn-warning">Edit</a>
                                 <form method="POST" action="/admin/configs/<%= config.id %>/delete" style="display: inline;">

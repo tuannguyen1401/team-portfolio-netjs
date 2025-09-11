@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios';
 
 export default function About() {
   const skills = [
@@ -8,6 +9,40 @@ export default function About() {
 
   const imageUrl = import.meta.env.VITE_IMAGE_URL;
   const QRCodeUrl = imageUrl + "/uploads/qr_only_clean.jpg";
+  const baseUrl = import.meta.env.VITE_API_URL;
+
+  async function sendMessage(data) {
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+    try {
+      const response = await axios.post(`${baseUrl}/contact`, data, {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+      fullName: e.target.name.value,
+      email: e.target.email.value,
+      message: e.target.message.value
+    };
+    let result = await sendMessage(data);
+
+      if (result.ok) {
+        alert(result.message);
+        e.target.reset();
+      } else {
+        alert(result.message);
+        e.target.reset();
+      }
+  };
 
   return (
     <section className="py-10 sm:py-16 md:py-20 bg-gray-50">
@@ -35,7 +70,7 @@ export default function About() {
             <div className="bg-white rounded-lg shadow-lg p-8">
               <h3 className="text-2xl font-semibold mb-4 text-gray-800">Liên hệ với tôi</h3>
               <p className="mb-6 text-gray-600">Bạn có câu hỏi hoặc muốn hợp tác? Hãy gửi tin nhắn cho tôi!</p>
-              <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-gray-700 font-medium mb-1" htmlFor="name">
                     Họ và tên

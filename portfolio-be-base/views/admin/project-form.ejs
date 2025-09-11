@@ -69,6 +69,11 @@
                             Featured Project
                         </label>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="stack_name" class="form-label">Stack Name</label>
+                        <input type="text" class="form-control" id="stack_name" name="stack_name" value="<%= project ? project.stack_name : '' %>">
+                    </div>
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">

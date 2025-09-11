@@ -5,9 +5,13 @@ import {
   CarouselItem
 } from "@/components/ui/carousel"
 
+import { fetchData } from "@/lib/api"
+
 import Autoplay from "embla-carousel-autoplay"
 
 export default function Home() {
+
+
   const slides = [
     {
       image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=1887&auto=format&fit=crop"
